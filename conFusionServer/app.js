@@ -5,6 +5,8 @@ var path = require('path');
 var session = require('express-session');
 var FileStore = require('session-file-store')(session);
 var logger = require('morgan');
+var passport = require('passport');
+var authenticate = require('./authenticate');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -23,7 +25,8 @@ connect.then((db) => {
 }, (err) => { console.log(err); });
 
 var app = express();
-
+app.use(passport.initialize());
+app.use(passport.session());
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
@@ -43,23 +46,15 @@ app.use(express.urlencoded({ extended: false }));
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
-function auth(req,res,next) {
-  console.log(req.session);
-
-  if(!req.session.user) {
-      var err = new Error('You are not authenticated!');
-      err.status = 403;
-      return next(err);
+function auth (req, res, next) {
+  console.log(req.session.passport.user);
+  if (!req.session.passport.user) {
+    var err = new Error('You are not authenticated!');
+    err.status = 403;
+    next(err);
   }
   else {
-    if (req.session.user === 'authenticated') {
-      next();
-    }
-    else {
-      var err = new Error('You are not authenticated!');
-      err.status = 403;
-      return next(err);
-    }
+        next();
   }
 }
 
